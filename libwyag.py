@@ -280,3 +280,116 @@ class GitBlob(GitObject):
          raise Exception("Unknown type %s!" % fmt)
 
         return object_write(obj, repo)                               
+
+    #kvlm = Key Value List with messages
+    def kvlm_parse(raw,start=0,dct=None):
+        if not dct:
+            #the dct=OrderedDict() is not declared as argument because then all calls to the function will grow the same dict
+            dct = collections.OrderedDict()
+
+        #search for next space or newline
+        space = raw.find(b' ',start)
+        newline = raw.find(b'\n',start)
+
+        #if space appears before newline,we have a keyword
+        
+        #Base case
+        # ==========
+        # If newline appears first (or there's no space at all, in which
+        # case find returns -1), we assume a blank line.  A blank line
+        # means the remainder of the data is the message   
+        if(space < 0 ) or (newline < space):
+            assert(newline==start)
+            dct[b' '] = raw[start+1:]
+            return dct 
+        
+        #Recursive case
+        # ============
+        # we read a key-value pair and recurse for the next.
+        key = raw[start:space]
+
+        #Find the end of value. Continuation lines begin with space,so we loop until we find a "\n" not followed by a space
+        end = start
+        while True:
+            end = raw.find(b'\n',end+1)
+            if raw[end+1] != ord(' '): break
+
+        #Grab the value
+        # also drop the leading space on continuation lines
+        value = raw[space+1:end].replace(b'\n',b'\n')
+
+        #Don't overwrite existing data contents
+        if key in dct:
+            if type(dct[key]) == list:
+                dct[key].append(value)
+            else:
+                dct[key] = [dct[key],value]
+        else : 
+            dct[key] = value
+
+        return kvlm_parse(raw,start=end+1,dct=dct)   
+
+
+    def kvlm_serialize(kvlm):
+        ret = b''
+
+        #output fields
+        for k in kvlm.keys():
+            #skip the message itself
+            if k== b'' : continue
+            val = kvlm[k]
+            #normalize to a list
+            if type(val) != list:
+                val = [val]
+
+            for v in val:
+                ret += k + b' ' + (v.replace(b'\n',b'\n ')) + b'\n'
+
+        #append message
+        ret += b'\n' + kvlm[b''] 
+        return ret                             
+
+class GitCommit(GitObject):
+    fmt=b'commit'
+
+    def serialize(self):
+        return kvlm_serialize(self.kvlm)
+
+    def deserialize(self, data):
+        self.kvlm = kvlm_parse(data)    
+
+
+    argsp = argsubparsers.add_parser("log",help="Display history of a given commit.")
+    argsp.add_argument("commit",default="HEAD",
+                        nargs="?",
+                        help="Commit to start at.") 
+
+    def cmd_log(args):
+        repo = repo_find()
+
+        print("digraph wyaglog{")
+        log_graphviz(repo, object_find(repo, args.commit), set())
+        print("}") 
+
+    def log_graphviz(repo,sha,seen):
+
+        if sha in seen:
+            return
+        seen.add(sha)
+
+        commit = object_read(repo,sha)
+        assert (commit.fmt == b'commit')
+
+        if not b'parent' in commit.kvlm.keys():
+            #base case: initial commit
+            return 
+
+        parents = commit.kvlm[b'parent']
+
+        if type(parents) != list:
+            parents = [parents]
+
+        for parent in parents:
+            parent  = parent.decode("ascii") 
+            print ("c_{0} -> c_{1};".format(sha, p))
+            log_graphviz(repo, p, seen)
