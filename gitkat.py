@@ -175,7 +175,7 @@ class GitObject (object):
     def deserialize(self, data):
         raise Exception("Unimplemented!")        
 
-    def object_read(repo,sha):
+def object_read(repo,sha):
         """Read object object_id from Git repository repo. Return a GitObject whose exact type depends on the object."""
 
         path = repo_file(repo,"objects",sha[0:2],sha[2:])
@@ -203,10 +203,10 @@ class GitObject (object):
         # Call constructor and return object
         return c(repo, raw[y+1:])
 
-    def object_find(repo, name, fmt=None, follow=True):
+def object_find(repo, name, fmt=None, follow=True):
           return name
 
-    def object_write(obj,actually_write=True):
+def object_write(obj,actually_write=True):
         #serialize object data
         data = obj.serialize()
         #add header
@@ -224,30 +224,33 @@ class GitObject (object):
         return sha             
 
 class GitBlob(GitObject):
-    fmt= b'blob'
+    fmt=b'blob'
 
     def serialize(self):
         return self.blobdata
 
     def deserialize(self, data):
-        self.blobdata = data   
+        self.blobdata = data
 
-    argsp = argsubparsers.add_parser("cat-file",help="Provide content of repository objects") 
+argsp = argsubparsers.add_parser("cat-file",
+                                 help="Provide content of repository objects")
 
-    argsp.add_argument("type",
-                        metavar="type",
-                        choices=["blob","commit","tag","tree"],
-                        help="Specify a type")  
+argsp.add_argument("type",
+                   metavar="type",
+                   choices=["blob", "commit", "tag", "tree"],
+                   help="Specify the type")
 
-    argsp.add_argument("object",metavar="object",help="The object to display")   
+argsp.add_argument("object",
+                   metavar="object",
+                   help="The object to display")
 
-    def cmd_cat_file(args):
-        repo = repo_find()
-        cat_file(repo,args.object,fmt = args.type.encode())
+def cmd_cat_file(args):
+    repo = repo_find()
+    cat_file(repo, args.object, fmt=args.type.encode())
 
-    def cat_file(repo,obj,fmt=None):
-        obj = object_read(repo,object_find(repo,obj,fmt=fmt))
-        sys.stdout.buffer.write(obj.serialize)    
+def cat_file(repo, obj, fmt=None):
+    obj = object_read(repo, object_find(repo, obj, fmt=fmt))
+    sys.stdout.buffer.write(obj.serialize())   
 
 
     argsp = argsubparsers.add_parser("hash-object",help="Compute object ID and optionally creates a blob from a file") 
@@ -367,7 +370,7 @@ class GitCommit(GitObject):
     def cmd_log(args):
         repo = repo_find()
 
-        print("digraph wyaglog{")
+        print("digraph gitkatlog{")
         log_graphviz(repo, object_find(repo, args.commit), set())
         print("}") 
 
@@ -626,7 +629,7 @@ def object_find(repo, name, fmt=None, follow=True):
 
 argsp = argsubparsers.add_parser("rev-parse",help="Parse revision (or other objects) identifiers")
 
-argsp.add_argument("--wyag-type",metavar="type",dest="type",choices=["blob","commit","tag","tree"],
+argsp.add_argument("--gitkat-type",metavar="type",dest="type",choices=["blob","commit","tag","tree"],
                     default=None,help="Specify the expected type")
 argsp.add_argument("name",help="The name to parse")
 
