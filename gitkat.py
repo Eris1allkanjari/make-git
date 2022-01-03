@@ -274,7 +274,7 @@ def cat_file(repo, obj, fmt=None):
     def object_hash(fd,fmt,repo=None):
         data = fd.read()
 
-        #choose constructore depending on object type found on header
+        #choose constructor depending on object type found on header
         if   fmt==b'commit' : obj=GitCommit(repo, data)
         elif fmt==b'tree'   : obj=GitTree(repo, data)
         elif fmt==b'tag'    : obj=GitTag(repo, data)
@@ -285,7 +285,7 @@ def cat_file(repo, obj, fmt=None):
         return object_write(obj, repo)                               
 
     #kvlm = Key Value List with messages
-    def kvlm_parse(raw,start=0,dct=None):
+def kvlm_parse(raw,start=0,dct=None):
         if not dct:
             #the dct=OrderedDict() is not declared as argument because then all calls to the function will grow the same dict
             dct = collections.OrderedDict()
@@ -333,7 +333,7 @@ def cat_file(repo, obj, fmt=None):
         return kvlm_parse(raw,start=end+1,dct=dct)   
 
 
-    def kvlm_serialize(kvlm):
+def kvlm_serialize(kvlm):
         ret = b''
 
         #output fields
@@ -374,7 +374,7 @@ class GitCommit(GitObject):
         log_graphviz(repo, object_find(repo, args.commit), set())
         print("}") 
 
-    def log_graphviz(repo,sha,seen):
+def log_graphviz(repo,sha,seen):
 
         if sha in seen:
             return
@@ -403,7 +403,7 @@ class GitTreeLeaf(object):
         self.path = path
         self.sha = sha
 
-    def tree_parse_one(raw, start=0):
+def tree_parse_one(raw, start=0):
         #find the space terminator of the mode
         x = raw.find(b' ', start)
         assert(x-start == 5 or x-start==6)
@@ -420,7 +420,7 @@ class GitTreeLeaf(object):
         sha = hex( int.frombytes(raw[y+1:y+21],"big"))[2:]  
         #hex() add 0x in front , we don't want that 
         return y+21,GitTreeLeaf(mode, path, sha)
-    def tree_parse(raw):
+def tree_parse(raw):
         pos = 0
         max = len(raw)
         ret = list()
@@ -430,7 +430,7 @@ class GitTreeLeaf(object):
 
         return ret 
 
-    def tree_serialize(obj):
+def tree_serialize(obj):
      #@FIXME Add serializer!
      ret = b''
      for i in obj.items:
@@ -468,7 +468,7 @@ class GitTree(GitObject):
     argsp.add_argument("commit",help="The commit or tree to checkout.")
     argsp.add_argument("path",help = "The EMPTY directory to checkout on.")
 
-    def cmd_checkout(args):
+def cmd_checkout(args):
         repo = repo_find()
 
         obj = object_read(repo,object_find(repo,args.commit))
@@ -488,7 +488,7 @@ class GitTree(GitObject):
     
         tree_checkout(repo,obj,os.path.realpath(args.path).encode())
 
-    def tree_checkout(repo,tree,path):
+def tree_checkout(repo,tree,path):
         for item in tree.items:
             obj = object_read(repo,item.sha)
             dest = os.path.join(path,item.path)
