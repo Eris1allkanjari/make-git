@@ -451,10 +451,10 @@ class GitTree(GitObject):
     def serialize(self):
         return tree_serialize(self)
 
-    argsp = argsubparsers.add_parser("ls-tree",help="Pretty-print a tree object.")
-    argsp.add_argument("object", help="The object to show.")
+argsp = argsubparsers.add_parser("ls-tree",help="Pretty-print a tree object.")
+argsp.add_argument("object", help="The object to show.")
 
-    def cmd_ls_tree(args):
+def cmd_ls_tree(args):
         repo = repo_find()
         obj = object_read(repo, object_find(repo, args.object, fmt=b'tree'))
 
@@ -463,10 +463,10 @@ class GitTree(GitObject):
             #Git's ls-tree displays the type of the object pointed to.
             object_read(repo,item.sha).fmt.decode("ascii"),item.sha,item.path.decode("ascii")))
 
-    argsp = argsubparsers.add_parser("checkout",help="Checkout a commit inside of a directory.")
+argsp = argsubparsers.add_parser("checkout",help="Checkout a commit inside of a directory.")
 
-    argsp.add_argument("commit",help="The commit or tree to checkout.")
-    argsp.add_argument("path",help = "The EMPTY directory to checkout on.")
+argsp.add_argument("commit",help="The commit or tree to checkout.")
+argsp.add_argument("path",help = "The EMPTY directory to checkout on.")
 
 def cmd_checkout(args):
         repo = repo_find()
